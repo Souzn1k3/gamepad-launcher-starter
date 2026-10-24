@@ -4,6 +4,17 @@
 
 Работает в трее, не требует администратора, ничего не закрывает при отключении геймпада.
 
+## Скачать
+
+Готовый `GamepadLauncherStarter.exe` для Windows 10/11 — в разделе [Releases](https://github.com/Souzn1k3/gamepad-launcher-starter/releases/latest). Терминал не нужен.
+
+1. Скачайте exe из последнего релиза.
+2. Положите файл в постоянную папку, например `C:\GamepadLauncherStarter`.
+3. Запустите exe. При первом запуске откроются настройки.
+4. Включите нужные приложения и автозапуск.
+
+Windows может предупредить SmartScreen, потому что файл не подписан: «Подробнее» → «Выполнить в любом случае». Программа не требует администратора. Настройки хранятся в `%LOCALAPPDATA%\GamepadLauncherStarter`. Автозапуск указывает на текущее расположение exe, поэтому не перемещайте файл после его включения.
+
 ## Возможности
 
 - Определение любого геймпада: Xbox, DualSense, DualShock 4, 8BitDo, generic HID.
@@ -36,7 +47,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 Результат: `dist\GamepadLauncherStarter.exe`.
 
-## Установка
+## Установка скриптом (необязательно)
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1

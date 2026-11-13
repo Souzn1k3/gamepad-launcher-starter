@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -114,8 +115,10 @@ namespace GamepadLauncherStarter
                 else
                 {
                     report.AppendLine("Включена: " + settings.SkipWhenFullscreenGame);
-                    List<GameRoot> gameRoots = RunningGameDetector.CollectGameRoots();
-                    report.AppendLine("Найдено игровых папок: " + gameRoots.Count);
+                    Stopwatch rootsWatch = Stopwatch.StartNew();
+                    List<GameRoot> gameRoots = RunningGameDetector.CollectGameRoots(true);
+                    rootsWatch.Stop();
+                    report.AppendLine("Найдено игровых папок: " + gameRoots.Count + " (сбор: " + rootsWatch.ElapsedMilliseconds + " мс)");
                     foreach (GameRoot root in gameRoots)
                     {
                         string displayName = string.IsNullOrEmpty(root.DisplayName)
@@ -123,7 +126,10 @@ namespace GamepadLauncherStarter
                             : root.DisplayName;
                         report.AppendLine("  - [" + root.Source + "] " + displayName + " -> " + root.Path);
                     }
+                    Stopwatch detectionWatch = Stopwatch.StartNew();
                     RunningGameInfo runningGame = RunningGameDetector.Detect(gameRoots);
+                    detectionWatch.Stop();
+                    report.AppendLine("Время проверки: " + detectionWatch.ElapsedMilliseconds + " мс");
                     report.AppendLine("Игра запущена: " + (runningGame.IsGameRunning ? "да" : "нет"));
                     if (runningGame.IsGameRunning)
                     {

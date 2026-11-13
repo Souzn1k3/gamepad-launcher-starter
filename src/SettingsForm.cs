@@ -638,6 +638,7 @@ namespace GamepadLauncherStarter
         private void RefreshPaths()
         {
             AppCatalog.AutodetectPaths(_working.Apps);
+            RunningGameDetector.InvalidateGameRoots();
             RefreshApps();
             MessageBox.Show(this,
                 "Пути встроенных приложений обновлены. Проверьте список.",

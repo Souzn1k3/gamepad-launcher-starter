@@ -116,6 +116,23 @@ namespace GamepadLauncherStarter
             }
         }
 
+        public static int GetForegroundProcessId()
+        {
+            try
+            {
+                IntPtr handle = GetForegroundWindow();
+                if (handle == IntPtr.Zero)
+                    return 0;
+                uint processId;
+                GetWindowThreadProcessId(handle, out processId);
+                return (int)processId;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
         public static ForegroundWindowInfo GetForegroundInfo()
         {
             try

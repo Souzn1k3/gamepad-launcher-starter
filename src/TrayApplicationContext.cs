@@ -85,7 +85,17 @@ namespace GamepadLauncherStarter
                 ShowSettings();
             };
 
-            _runtime.Start();
+            _runtime.Start(delegate(Action action)
+            {
+                try
+                {
+                    _marshaller.BeginInvoke(action);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn("Не удалось выполнить действие в UI-потоке: " + ex.Message);
+                }
+            });
             UpdateMenuChecks();
             UpdateTrayText();
 

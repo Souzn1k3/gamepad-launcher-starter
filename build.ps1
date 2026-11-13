@@ -52,6 +52,7 @@ $referenceNames = @(
     'System.Windows.Forms.dll',
     'System.Drawing.dll',
     'System.Xml.dll',
+    'System.Runtime.Serialization.dll',
     'Accessibility.dll'
 )
 

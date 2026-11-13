@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 
 namespace GamepadLauncherStarter
 {
@@ -21,6 +23,9 @@ namespace GamepadLauncherStarter
     {
         private readonly bool _applySystemChanges;
         private GamepadWatcher _watcher;
+        private Action<Action> _uiMarshaller;
+        private SynchronizationContext _uiContext;
+        private int _guardCheckInProgress;
         private bool _disposed;
 
         public AppSettings Settings { get; private set; }
@@ -57,8 +62,15 @@ namespace GamepadLauncherStarter
 
         public void Start()
         {
+            Start(null);
+        }
+
+        public void Start(Action<Action> uiMarshaller)
+        {
             if (_watcher != null || _disposed)
                 return;
+            _uiMarshaller = uiMarshaller;
+            _uiContext = SynchronizationContext.Current;
             _watcher = new GamepadWatcher(delegate { return Settings; });
             _watcher.GamepadArrived += OnGamepadArrived;
             _watcher.DevicesChanged += OnDevicesChanged;
@@ -188,15 +200,118 @@ namespace GamepadLauncherStarter
 
                 if (!simulated && settings.SkipWhenFullscreenGame)
                 {
-                    RunningGameInfo runningGame = RunningGameDetector.Detect();
-                    if (runningGame != null && runningGame.IsGameRunning)
-                    {
-                        Logger.Info("Обнаружена запущенная игра: " + runningGame.Describe() +
-                                    ". Подключение геймпада пропущено (настройка), приложения не запускались.");
-                        return;
-                    }
+                    BeginGuardCheck(settings, deviceText);
+                    return;
                 }
 
+                ContinueTrigger(settings, deviceText);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Ошибка обработки подключения геймпада", ex);
+                RaiseNotification(settings, "Ошибка", "Не удалось обработать подключение геймпада: " + ex.Message);
+            }
+        }
+
+        private void BeginGuardCheck(AppSettings settings, string deviceText)
+        {
+            if (Interlocked.CompareExchange(ref _guardCheckInProgress, 1, 0) != 0)
+            {
+                Logger.Info("Проверка запущенной игры уже выполняется — пропускаю дублирующее событие.");
+                return;
+            }
+
+            try
+            {
+                ThreadPool.QueueUserWorkItem(delegate(object state)
+                {
+                    RunningGameInfo game = null;
+                    string error = null;
+                    Stopwatch stopwatch = Stopwatch.StartNew();
+                    try
+                    {
+                        game = RunningGameDetector.Detect();
+                    }
+                    catch (Exception ex)
+                    {
+                        error = ex.Message;
+                        Logger.Error("Ошибка фоновой проверки запущенной игры", ex);
+                    }
+                    stopwatch.Stop();
+
+                    PostToUi(delegate
+                    {
+                        Interlocked.Exchange(ref _guardCheckInProgress, 0);
+                        if (_disposed)
+                            return;
+
+                        if (!string.IsNullOrEmpty(error))
+                            Logger.Warn("Проверка запущенной игры завершилась ошибкой: " + error + ". Продолжаю без блокировки.");
+
+                        if (game != null && game.IsGameRunning)
+                        {
+                            if (Settings.SkipWhenFullscreenGame)
+                            {
+                                Logger.Info("Обнаружена запущенная игра: " + game.Describe() +
+                                            ". Подключение геймпада пропущено (настройка), приложения не запускались. Проверка: " +
+                                            stopwatch.ElapsedMilliseconds + " мс.");
+                                return;
+                            }
+
+                            Logger.Info("Обнаружена запущенная игра: " + game.Describe() +
+                                        ", но защита выключена в настройках — продолжаю. Проверка: " +
+                                        stopwatch.ElapsedMilliseconds + " мс.");
+                        }
+                        else
+                        {
+                            Logger.Info("Проверка запущенной игры: не обнаружено (" + stopwatch.ElapsedMilliseconds + " мс).");
+                        }
+                        ContinueTrigger(settings, deviceText);
+                    });
+                });
+            }
+            catch (Exception ex)
+            {
+                Interlocked.Exchange(ref _guardCheckInProgress, 0);
+                Logger.Error("Не удалось запустить фоновую проверку игры", ex);
+                ContinueTrigger(settings, deviceText);
+            }
+        }
+
+        private void PostToUi(Action action)
+        {
+            if (action == null)
+                return;
+            try
+            {
+                Action<Action> marshaller = _uiMarshaller;
+                if (marshaller != null)
+                {
+                    marshaller(action);
+                    return;
+                }
+
+                SynchronizationContext context = _uiContext;
+                if (context != null)
+                {
+                    context.Post(delegate(object state) { action(); }, null);
+                    return;
+                }
+
+                Logger.Warn("UI-контекст недоступен — результат фоновой проверки не будет применён.");
+                Interlocked.Exchange(ref _guardCheckInProgress, 0);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Не удалось вернуться в UI-поток", ex);
+                Interlocked.Exchange(ref _guardCheckInProgress, 0);
+            }
+        }
+
+        private void ContinueTrigger(AppSettings settings, string deviceText)
+        {
+            try
+            {
                 if (settings.TrayOnly)
                 {
                     Logger.Info("Режим «Только трей»: приложения не запускаются.");

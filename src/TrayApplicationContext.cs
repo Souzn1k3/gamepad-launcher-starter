@@ -43,7 +43,7 @@ namespace GamepadLauncherStarter
 
             _miEnabled = new MenuItem("Включено", OnToggleEnabled);
             _miTrayOnly = new MenuItem("Только трей (ничего не запускать)", OnToggleTrayOnly);
-            _miSkipFullscreen = new MenuItem("Не реагировать в полноэкранном режиме", OnToggleSkipFullscreen);
+            _miSkipFullscreen = new MenuItem("Не реагировать во время игры", OnToggleSkipFullscreen);
 
             MenuItem settingsItem = new MenuItem("Настройки...", delegate { ShowSettings(); });
             settingsItem.DefaultItem = true;
@@ -221,8 +221,8 @@ namespace GamepadLauncherStarter
             _runtime.Settings.SkipWhenFullscreenGame = !_runtime.Settings.SkipWhenFullscreenGame;
             _runtime.SaveSettings();
             UpdateMenuChecks();
-            Logger.Info("Пропуск в полноэкранном режиме " +
-                        (_runtime.Settings.SkipWhenFullscreenGame ? "включён" : "выключен") + ".");
+            Logger.Info("Защита во время игры " +
+                        (_runtime.Settings.SkipWhenFullscreenGame ? "включена" : "выключена") + ".");
         }
 
         private void UpdateMenuChecks()

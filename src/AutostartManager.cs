@@ -91,7 +91,8 @@ namespace GamepadLauncherStarter
                 }
                 else
                 {
-                    Logger.Info("Запись Steam в автозапуске не найдена.");
+                    if (!settings.SteamAutostartChecked)
+                        Logger.Info("Запись Steam в автозапуске не найдена.");
                 }
                 settings.SteamAutostartChecked = true;
             }

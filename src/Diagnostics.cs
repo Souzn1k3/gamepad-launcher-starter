@@ -55,7 +55,7 @@ namespace GamepadLauncherStarter
                     report.AppendLine("Только трей: " + settings.TrayOnly);
                     report.AppendLine("Уведомления: " + settings.ShowNotifications);
                     report.AppendLine("Запуск при старте с геймпадом: " + settings.LaunchOnStartIfConnected);
-                    report.AppendLine("Пропуск при полноэкранной игре: " + settings.SkipWhenFullscreenGame);
+                    report.AppendLine("Защита во время игры: " + settings.SkipWhenFullscreenGame);
                     report.AppendLine("Режим частичного запуска: " + settings.PartialMode);
                     report.AppendLine("Автозапуск программы: " + settings.StartWithWindows);
                     report.AppendLine("Управление автозапуском Steam: " + settings.ManageSteamAutostart +
@@ -106,6 +106,35 @@ namespace GamepadLauncherStarter
                                   (string.IsNullOrEmpty(backupFile) ? "нет" : AppPaths.SteamBackupFile + " -> " + backupFile));
                 report.AppendLine();
 
+                report.AppendLine("=== Защита во время игры ===");
+                if (settings == null)
+                {
+                    report.AppendLine("Настройки не загружены.");
+                }
+                else
+                {
+                    report.AppendLine("Включена: " + settings.SkipWhenFullscreenGame);
+                    List<GameRoot> gameRoots = RunningGameDetector.CollectGameRoots();
+                    report.AppendLine("Найдено игровых папок: " + gameRoots.Count);
+                    foreach (GameRoot root in gameRoots)
+                    {
+                        string displayName = string.IsNullOrEmpty(root.DisplayName)
+                            ? Path.GetFileName(root.Path)
+                            : root.DisplayName;
+                        report.AppendLine("  - [" + root.Source + "] " + displayName + " -> " + root.Path);
+                    }
+                    RunningGameInfo runningGame = RunningGameDetector.Detect(gameRoots);
+                    report.AppendLine("Игра запущена: " + (runningGame.IsGameRunning ? "да" : "нет"));
+                    if (runningGame.IsGameRunning)
+                    {
+                        report.AppendLine("  Игра: " + runningGame.DisplayName);
+                        report.AppendLine("  Процесс: " + runningGame.ProcessName);
+                        report.AppendLine("  Источник: " + runningGame.Source);
+                        report.AppendLine("  Путь: " + runningGame.ExecutablePath);
+                    }
+                }
+                report.AppendLine();
+
                 report.AppendLine("=== Наблюдатель ===");
                 report.AppendLine("Запущен: " + watcherRunning);
                 report.AppendLine("Последнее сканирование: " + (lastScanText ?? ""));
@@ -150,6 +179,8 @@ namespace GamepadLauncherStarter
                 report.AppendLine("Полноэкранное состояние: " + FullscreenDetector.GetStateText() +
                                   " (код " + stateCode + ", " +
                                   (FullscreenDetector.IsFullscreenAppActive() ? "пропуск активен" : "пропуска нет") + ")");
+                report.AppendLine("Геометрический полноэкранный режим: " +
+                                  (FullscreenDetector.IsForegroundWindowFullscreen() ? "да" : "нет"));
                 report.AppendLine("Активное окно: " + FullscreenDetector.GetForegroundDescription());
                 report.AppendLine("Конец отчёта.");
             }

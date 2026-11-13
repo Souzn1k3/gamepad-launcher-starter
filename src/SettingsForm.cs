@@ -130,10 +130,11 @@ namespace GamepadLauncherStarter
             _cmbPartial.Items.Add("Ничего не делать, если хотя бы одно выбранное приложение уже запущено");
             AddRow(behaviorTable, _cmbPartial);
 
-            _chkSkipFullscreen = NewCheck("Не реагировать в полноэкранном режиме");
+            _chkSkipFullscreen = NewCheck("Не реагировать, если запущена игра");
             AddRow(behaviorTable, _chkSkipFullscreen);
-            AddRow(behaviorTable, NewHint("Пока активно полноэкранное приложение (игра, видео, Big Picture), подключение геймпада игнорируется. " +
-                                          "Если запуск должен срабатывать всегда — снимите галочку."));
+            AddRow(behaviorTable, NewHint("Пока игра запущена, подключение геймпада ничего не запускает и не разворачивает; событие пишется только в журнал. " +
+                                          "Определяются игры из библиотек Steam и Epic, а также полноэкранные игры. " +
+                                          "Фоновые приложения вроде Wallpaper Engine игрой не считаются."));
             AddRootRow(root, behavior);
 
             GroupBox notifications = NewGroup("Уведомления");

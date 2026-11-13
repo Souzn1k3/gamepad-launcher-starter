@@ -85,21 +85,6 @@ namespace GamepadLauncherStarter
             return names.ToArray();
         }
 
-        public static bool MatchesProcess(AppEntry app, string processName)
-        {
-            if (app == null || string.IsNullOrEmpty(processName))
-                return false;
-            string cleaned = processName.Trim();
-            if (cleaned.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                cleaned = cleaned.Substring(0, cleaned.Length - 4);
-            foreach (string name in GetProcessNames(app))
-            {
-                if (string.Equals(name, cleaned, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            return false;
-        }
-
         public static bool IsRunning(AppEntry app)
         {
             foreach (string name in GetProcessNames(app))

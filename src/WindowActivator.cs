@@ -9,7 +9,6 @@ namespace GamepadLauncherStarter
 {
     public static class WindowActivator
     {
-        private const int SW_SHOWMINIMIZED = 2;
         private const int SW_SHOW = 5;
         private const int SW_MINIMIZE = 6;
         private const int SW_RESTORE = 9;

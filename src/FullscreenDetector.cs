@@ -33,7 +33,47 @@ namespace GamepadLauncherStarter
         public static bool IsFullscreenAppActive()
         {
             int state;
-            return TryGetState(out state) && IsFullscreenState(state);
+            if (TryGetState(out state) && IsFullscreenState(state))
+                return true;
+            return IsForegroundWindowFullscreen();
+        }
+
+        public static bool IsForegroundWindowFullscreen()
+        {
+            try
+            {
+                IntPtr handle = GetForegroundWindow();
+                if (handle == IntPtr.Zero)
+                    return false;
+
+                int style = GetWindowLong(handle, GWL_STYLE);
+                if ((style & WS_CAPTION) == WS_CAPTION)
+                    return false;
+
+                RECT windowRect;
+                if (!GetWindowRect(handle, out windowRect))
+                    return false;
+
+                IntPtr monitor = MonitorFromWindow(handle, MONITOR_DEFAULTTONEAREST);
+                if (monitor == IntPtr.Zero)
+                    return false;
+
+                MONITORINFO monitorInfo = new MONITORINFO();
+                monitorInfo.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
+                if (!GetMonitorInfo(monitor, ref monitorInfo))
+                    return false;
+
+                RECT monitorRect = monitorInfo.rcMonitor;
+                const int tolerance = 2;
+                return windowRect.Left <= monitorRect.Left + tolerance &&
+                       windowRect.Top <= monitorRect.Top + tolerance &&
+                       windowRect.Right >= monitorRect.Right - tolerance &&
+                       windowRect.Bottom >= monitorRect.Bottom - tolerance;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public static bool TryGetState(out int state)
@@ -124,6 +164,28 @@ namespace GamepadLauncherStarter
                    state == QUNS_PRESENTATION_MODE || state == QUNS_APP;
         }
 
+        private const int GWL_STYLE = -16;
+        private const int WS_CAPTION = 0x00C00000;
+        private const uint MONITOR_DEFAULTTONEAREST = 2;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public int dwFlags;
+        }
+
         [DllImport("shell32.dll")]
         private static extern int SHQueryUserNotificationState(out int state);
 
@@ -135,5 +197,17 @@ namespace GamepadLauncherStarter
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern int GetWindowText(IntPtr handle, StringBuilder text, int maxCount);
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr handle, int index);
+
+        [DllImport("user32.dll")]
+        private static extern bool GetWindowRect(IntPtr handle, out RECT rectangle);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr handle, uint flags);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern bool GetMonitorInfo(IntPtr monitor, ref MONITORINFO info);
     }
 }

@@ -7,7 +7,7 @@ namespace GamepadLauncherStarter
     public static class AppInfo
     {
         public const string ProductName = "Gamepad Launcher Starter";
-        public const string Version = "1.0.0";
+        public const string Version = "1.1.0";
         public const string MutexName = @"Local\GamepadLauncherStarter_8f3b2f5d6f4a4e51";
         public const string ShowSettingsEventName = @"Local\GamepadLauncherStarter_ShowSettings_8f3b2f5d6f4a4e51";
 

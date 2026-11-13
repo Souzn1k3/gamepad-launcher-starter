@@ -46,7 +46,7 @@ namespace GamepadLauncherStarter
             {
                 AutostartManager.SyncSteamBackupFile(Settings);
                 AutostartManager.ApplyOurAutostart(Settings.StartWithWindows);
-                if (Settings.ManageSteamAutostart && !Settings.SteamAutostartChecked)
+                if (Settings.ManageSteamAutostart)
                     AutostartManager.ManageSteamAutostart(Settings);
                 SettingsStore.Save(Settings);
             }
@@ -186,26 +186,13 @@ namespace GamepadLauncherStarter
                     return;
                 }
 
-                if (!simulated && settings.SkipWhenFullscreenGame && FullscreenDetector.IsFullscreenAppActive())
+                if (!simulated && settings.SkipWhenFullscreenGame)
                 {
-                    ForegroundWindowInfo foreground = FullscreenDetector.GetForegroundInfo();
-                    if (foreground != null && IsConfiguredAppProcess(foreground.ProcessName, settings))
+                    RunningGameInfo runningGame = RunningGameDetector.Detect();
+                    if (runningGame != null && runningGame.IsGameRunning)
                     {
-                        Logger.Info("Полноэкранное окно принадлежит настроенному приложению (" +
-                                    foreground.ProcessName + ") — пропуск не применяю.");
-                    }
-                    else
-                    {
-                        string description = foreground != null
-                            ? foreground.Describe()
-                            : "не удалось определить активное окно";
-                        string reason = "активно полноэкранное приложение: " + description +
-                                        " (состояние: " + FullscreenDetector.GetStateText() +
-                                        "). Запуск пропущен по настройке.";
-                        Logger.Info(reason);
-                        RaiseNotification(settings, "Геймпад подключён",
-                            "Запуск пропущен: " + reason +
-                            " Отключите «Не реагировать в полноэкранном режиме» в настройках или в меню трея, если запуск должен срабатывать всегда.");
+                        Logger.Info("Обнаружена запущенная игра: " + runningGame.Describe() +
+                                    ". Подключение геймпада пропущено (настройка), приложения не запускались.");
                         return;
                     }
                 }
@@ -265,18 +252,6 @@ namespace GamepadLauncherStarter
                 Logger.Error("Ошибка обработки подключения геймпада", ex);
                 RaiseNotification(settings, "Ошибка", "Не удалось обработать подключение геймпада: " + ex.Message);
             }
-        }
-
-        private static bool IsConfiguredAppProcess(string processName, AppSettings settings)
-        {
-            if (settings == null || string.IsNullOrEmpty(processName))
-                return false;
-            foreach (AppEntry app in settings.Apps)
-            {
-                if (app != null && LauncherService.MatchesProcess(app, processName))
-                    return true;
-            }
-            return false;
         }
 
         private static string DescribeDevices(List<GamepadDevice> devices)

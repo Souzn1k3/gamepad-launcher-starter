@@ -25,7 +25,7 @@ namespace GamepadLauncherStarter
         public bool TrayOnly;
         public bool ShowNotifications = true;
         public bool LaunchOnStartIfConnected = true;
-        public bool SkipWhenFullscreenGame;
+        public bool SkipWhenFullscreenGame = true;
         public PartialLaunchMode PartialMode = PartialLaunchMode.LaunchMissing;
         public bool StartWithWindows = true;
         public bool ManageSteamAutostart = true;
